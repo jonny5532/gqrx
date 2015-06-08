@@ -86,6 +86,8 @@ receiver::receiver(const std::string input_device, const std::string audio_devic
     rx = make_nbrx(d_input_rate, d_audio_rate);
     lo = gr::analog::sig_source_c::make(d_input_rate, gr::analog::GR_SIN_WAVE, 0.0, 1.0);
     mixer = gr::blocks::multiply_cc::make();
+	
+	gendigital = make_rx_gendigital(d_input_rate);
 
     iq_swap = make_iq_swap_cc(false);
     dc_corr = make_dc_corr_cc(d_input_rate, 1.0);
@@ -276,6 +278,10 @@ double receiver::set_input_rate(double rate)
     rx->set_quad_rate(d_input_rate);
     lo->set_sampling_freq(d_input_rate);
     tb->unlock();
+	
+	gendigital = make_rx_gendigital(d_input_rate);
+	tb->connect(mixer, 0, gendigital, 0);
+	
 
     return d_input_rate;
 }
@@ -1062,8 +1068,8 @@ receiver::status receiver::start_sniffer(unsigned int samprate, int buffsize)
     sniffer->set_buffer_size(buffsize);
     sniffer_rr = make_resampler_ff((float)samprate/(float)d_audio_rate);
     tb->lock();
-    tb->connect(rx, 0, sniffer_rr, 0);
-    tb->connect(sniffer_rr, 0, sniffer, 0);
+//    tb->connect(rx, 0, sniffer_rr, 0);
+//    tb->connect(sniffer_rr, 0, sniffer, 0);
     tb->unlock();
     d_sniffer_active = true;
 
@@ -1135,6 +1141,7 @@ void receiver::connect_all(rx_chain type)
         }
         tb->connect(lo, 0, mixer, 1);
         tb->connect(mixer, 0, rx, 0);
+		tb->connect(mixer, 0, gendigital, 0);
         tb->connect(rx, 0, audio_fft, 0);
         tb->connect(rx, 0, audio_udp_sink, 0);
         tb->connect(rx, 0, audio_gain0, 0);
@@ -1221,4 +1228,9 @@ bool receiver::is_rds_decoder_active()
 void receiver::reset_rds_parser()
 {
     rx->reset_rds_parser();
+}
+
+void receiver::digital_decode()
+{
+	gendigital->process();
 }

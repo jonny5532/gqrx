@@ -95,6 +95,7 @@ SOURCES += \
     dsp/rx_demod_fm.cpp \
     dsp/rx_fft.cpp \
     dsp/rx_filter.cpp \
+    dsp/rx_gendigital.cpp \
     dsp/rx_meter.cpp \
     dsp/rx_noise_blanker_cc.cpp \
     dsp/rx_rds.cpp \
@@ -149,6 +150,7 @@ HEADERS += \
     dsp/rx_demod_fm.h \
     dsp/rx_fft.h \
     dsp/rx_filter.h \
+    dsp/rx_gendigital.h \
     dsp/rx_meter.h \
     dsp/rx_noise_blanker_cc.h \
     dsp/rx_rds.h \

@@ -1905,6 +1905,7 @@ void MainWindow::afsk1200win_closed()
 }
 
 
+
 /*! \brief Cyclic processing for acquiring samples from receiver and
  *         processing them with data decoders (see dec_* objects)
  */
@@ -1915,12 +1916,14 @@ void MainWindow::decoderTimeout()
 
     //qDebug() << "Process decoder";
 
-    rx->get_sniffer_data(&buffer[0], num);
-    if (dec_afsk1200)
-    {
-        dec_afsk1200->process_samples(&buffer[0], num);
-    }
+//     rx->get_sniffer_data(&buffer[0], num);
+//     if (dec_afsk1200)
+//     {
+//         dec_afsk1200->process_samples(&buffer[0], num);
+//     }
     /* else stop timeout and sniffer? */
+	
+	rx->digital_decode();
 }
 
 void MainWindow::setRdsDecoder(bool checked)

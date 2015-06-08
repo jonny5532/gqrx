@@ -44,6 +44,7 @@
 #include "dsp/rx_demod_fm.h"
 #include "dsp/rx_demod_am.h"
 #include "dsp/rx_fft.h"
+#include "dsp/rx_gendigital.h"
 #include "dsp/sniffer_f.h"
 #include "dsp/resampler_xx.h"
 #include "interfaces/udp_sink_f.h"
@@ -211,6 +212,8 @@ public:
     void stop_rds_decoder();
     bool is_rds_decoder_active();
     void reset_rds_parser();
+	
+	void digital_decode();
 
 private:
     void connect_all(rx_chain type);
@@ -237,6 +240,8 @@ private:
 
     osmosdr::source::sptr     src;       /*!< Real time I/Q source. */
     receiver_base_cf_sptr     rx;        /*!< receiver. */
+    
+    rx_gendigital_sptr     gendigital; //digital demodulator
 
     dc_corr_cc_sptr           dc_corr;   /*!< DC corrector block. */
     iq_swap_cc_sptr           iq_swap;   /*!< I/Q swapping block. */
