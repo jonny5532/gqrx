@@ -128,7 +128,7 @@
      <x>0</x>
      <y>0</y>
      <width>950</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -368,6 +368,9 @@
   </action>
   <action name="actionRemoteControl">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="icon">

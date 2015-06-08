@@ -39,7 +39,7 @@ DockFft::DockFft(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     // Workaround for Mac, see http://stackoverflow.com/questions/3978889/why-is-qhboxlayout-causing-widgets-to-overlap
     // Might be fixed in Qt 5?
     ui->resetButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
@@ -256,9 +256,16 @@ void DockFft::on_fftSplitSlider_valueChanged(int value)
 /*! \brief FFT filter gain changed. */
 void DockFft::on_fftAvgSlider_valueChanged(int value)
 {
-    double avg = 1.0 - 1.0e-2*((double)value);
+    float avg = 1.0 - 1.0e-2 * ((float)value);
 
     emit fftAvgChanged(avg);
+}
+
+/*! \brief FFT zoom level changed */
+void DockFft::on_fftZoomSlider_valueChanged(int level)
+{
+    ui->zoomLevelLabel->setText(QString("%1x").arg(level));
+    emit fftZoomChanged((float)level);
 }
 
 void DockFft::on_resetButton_clicked(void)

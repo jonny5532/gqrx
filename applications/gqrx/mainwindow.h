@@ -37,6 +37,7 @@
 #include "qtgui/dockinputctl.h"
 #include "qtgui/dockfft.h"
 #include "qtgui/dockbookmarks.h"
+#include "qtgui/dockrds.h"
 #include "qtgui/afsk1200win.h"
 #include "qtgui/iq_tool.h"
 
@@ -80,11 +81,11 @@ private:
 
     enum receiver::filter_shape d_filter_shape;
     std::complex<float>* d_fftData;
-    double *d_realFftData; /** FIXME: use vector */
-    double *d_iirFftData;  /** FIXME: use vector */
-    double *d_pwrFftData;  /** FIXME: use vector */
+    float          *d_realFftData;
+    float          *d_iirFftData;
+    float          *d_pwrFftData;
     //double *d_audioFttData;
-    double  d_fftAvg;      /*!< FFT averaging parameter set by user (not the true gain). */
+    float           d_fftAvg;      /*!< FFT averaging parameter set by user (not the true gain). */
 
     bool d_have_audio;  /*!< Whether we have audio (i.e. not with demod_off. */
 
@@ -94,17 +95,20 @@ private:
     DockInputCtl   *uiDockInputCtl;
     DockFft        *uiDockFft;
     DockBookmarks  *uiDockBookmarks;
+    DockRDS        *uiDockRDS;
 
     CIqTool        *iq_tool;
 
 
     /* data decoders */
     Afsk1200Win    *dec_afsk1200;
+    bool            dec_rds;
 
     QTimer   *dec_timer;
     QTimer   *meter_timer;
     QTimer   *iq_fft_timer;
     QTimer   *audio_fft_timer;
+    QTimer   *rds_timer;
 
     receiver *rx;
 
@@ -164,7 +168,7 @@ private slots:
     void setIqFftSize(int size);
     void setIqFftRate(int fps);
     void setIqFftSplit(int pct_wf);
-    void setIqFftAvg(double avg);
+    void setIqFftAvg(float avg);
     void setAudioFftRate(int fps);
     void setFftColor(const QColor color);
     void setFftFill(bool enable);
@@ -175,6 +179,9 @@ private slots:
     void on_plotter_newDemodFreq(qint64 freq, qint64 delta);   /*! New demod freq (aka. filter offset). */
     void on_plotter_newFilterFreq(int low, int high);    /*! New filter width */
     void on_plotter_newCenterFreq(qint64 f);
+
+    /* RDS */
+    void setRdsDecoder(bool checked);
 
     /* menu and toolbar actions */
     void on_actionDSP_triggered(bool checked);
@@ -205,7 +212,7 @@ private slots:
     void meterTimeout();
     void iqFftTimeout();
     void audioFftTimeout();
-
+    void rdsTimeout();
 };
 
 #endif // MAINWINDOW_H

@@ -34,7 +34,7 @@ DockAudio::DockAudio(QWidget *parent) :
 {
     ui->setupUi(this);
 
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     // Workaround for Mac, see http://stackoverflow.com/questions/3978889/why-is-qhboxlayout-causing-widgets-to-overlap
     // Might be fixed in Qt 5?
     ui->audioPlayButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
@@ -82,7 +82,7 @@ void DockAudio::setFftRange(quint64 minf, quint64 maxf)
     }
 }
 
-void DockAudio::setNewFttData(double *fftData, int size)
+void DockAudio::setNewFttData(float *fftData, int size)
 {
     ui->audioSpectrum->setNewFttData(fftData, size);
 }
