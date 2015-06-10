@@ -27,7 +27,7 @@
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/digital/mpsk_receiver_cc.h>
 #include <gnuradio/blocks/complex_to_real.h>
-#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdarg.h>
 #include "dsp/rx_gendigital.h"
@@ -60,8 +60,8 @@ rx_gendigital::rx_gendigital(double sample_rate)
       d_sample_rate(sample_rate)
 {
 	float d_gain = 1;
-	float d_cutoff_freq = 6000;
-	float d_trans_width = 1000;
+	float d_cutoff_freq = 15000;
+	float d_trans_width = 4000;
 	
 	d_taps = gr::filter::firdes::low_pass(d_gain, sample_rate,
                                  d_cutoff_freq, d_trans_width);
@@ -73,16 +73,18 @@ rx_gendigital::rx_gendigital(double sample_rate)
 // 	
 // 	std::cout << "scalefactor is " << ((float)sample_rate/(float)1200) << "\n";
 	
-	sniffer_rr = make_resampler_ff(4800.0f / sample_rate);
+	sniffer_rr = make_resampler_ff(6000.0f / sample_rate);
 	
 	sniffer = make_sniffer_f(SNIFFER_BUFSIZE);
 	sniffer->set_buffer_size(SNIFFER_BUFSIZE);
 	
-	wavfile = gr::blocks::wavfile_sink::make("test.wav", 1, 4800, 16);
+	wavfile = gr::blocks::wavfile_sink::make("test.wav", 1, 6000, 16);
 //    d_taps2 = gr::filter::firdes::low_pass(2500.0, d_sample_rate, 2400, 2000);
+	samplog = new std::ofstream("out.log");
 
 	connect(self(), 0, lpf, 0);
 	connect(lpf, 0, quadrature_demod, 0);
+//	connect(lpf, 0, quadrature_demod, 0);
 	connect(quadrature_demod, 0, sniffer_rr, 0);
 	connect(sniffer_rr, 0, sniffer, 0);
 	connect(sniffer_rr, 0, wavfile, 0);
@@ -125,31 +127,94 @@ rx_gendigital::~rx_gendigital ()
 
 }
 
+/* so, interesting parameters
+ * 
+ * - baud rate
+ * - squelch?
+ * - synchronisation code? probably just done in decoder
+ * 
+ * */
+
 void rx_gendigital::process ()
 {
-	float buff[SNIFFER_BUFSIZE];
+	float buf[SNIFFER_BUFSIZE];
 	unsigned int num;
+	unsigned int locked = 0;
+	unsigned int current_bit = 0;
+	unsigned int output = 0;
+	int nudge = 0;
+	unsigned int static_bits = 0;
 	
-	sniffer->get_samples(&buff[0], num);
+	sniffer->get_samples(&buf[0], num); //remember samples are inverted
 	
-	if(num>0) {
-		float min = buff[0];
-		float max = buff[0];
 		
+	for(unsigned int i=0;i<num;i++) {
+		if(static_bits>30) locked = 0;
 		
-		for(unsigned int i=0;i<num;i++) {
-			if(buff[i]>max) max = buff[i];
-			else if(buff[i]<min) min = buff[i];
-		
-			if(buff[i]>0) std::cout << "1";
-			else std::cout << "0";
-// 			std::cout << buff[i] <<" ";
+		if(locked==0) {
+			if(i>0 && buf[i]>=0 && buf[i-1]<0) { // 1->0 transition
+				locked = 1;
+				current_bit = 0;
+				static_bits = 0;
+				*samplog << "\n\n";
+			} else {
+//				std::cout << locked << " " << static_bits << " " << i << " " << buf[i] << " " << buf[i] << "\n";
+				continue;
+			}
 		}
-		std::cout << "\n";
 		
-		//std::cout << "range from " << min << "\t to " << max << "\n";
+		if(current_bit==0) {
+			*samplog << '_';
+		}
 		
-		//std::cout << "got " << num << " samples\n";
+		if(buf[i]<0) {
+			*samplog << '1';
+		} else {
+			*samplog << '0';
+		}
+		
+		if(current_bit==2) {
+			static_bits++;
+			if(buf[i]<0) {
+				std::cout << "1";
+				if(output==0) static_bits = 0;
+				output = 1;
+			} else {
+				std::cout << "0";
+				if(output==1) static_bits = 0;
+				output = 0;
+			}
+
+			if(i>1 && ((output==1 && buf[i-2]>0) || (output==0 && buf[i-2]<0)) ) {
+				// first edge came late!
+//				i += 1;
+				nudge += 1;
+				if(nudge>4) {
+					i += 1;
+//					std::cout << ">";
+					nudge = 0;
+				}
+			}
+			
+		}
+		
+
+		if(current_bit==4 && ((output==1 && buf[i]>0) || (output==0 && buf[i]<0)) ) {
+			// next edge came early!
+//			i -= 1;
+			nudge -= 1;
+			if(nudge<-4) {
+				i -= 1;
+//				std::cout << "<";
+				nudge = 0;
+			}
+		}
+		
+		current_bit++;		
+		if(current_bit>=5) current_bit = 0;
+	
+// 		if(buf[i]>0) std::cout << "1";
+// 		else std::cout << "0";
 	}
 }
 

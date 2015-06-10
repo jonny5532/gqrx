@@ -88,6 +88,7 @@ private:
 	gr::analog::quadrature_demod_cf::sptr quadrature_demod;
 	
 	gr::blocks::wavfile_sink::sptr wavfile;
+	std::ofstream *samplog;
 	
 //     std::vector<gr_complex> d_taps;
 //     std::vector<float> d_taps2;
@@ -111,6 +112,8 @@ private:
     resampler_ff_sptr sniffer_rr; /*!< Sniffer resampler. */
     
     double d_sample_rate;
+	
+	
 };
 
 

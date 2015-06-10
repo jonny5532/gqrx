@@ -43,7 +43,7 @@ sniffer_f::sniffer_f(int buffsize)
     : gr::sync_block ("rx_fft_c",
           gr::io_signature::make(1, 1, sizeof(float)),
           gr::io_signature::make(0, 0, 0)),
-      d_minsamp(100)
+      d_minsamp(1000)
 {
 
     /* allocate circular buffer */
