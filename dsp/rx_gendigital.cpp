@@ -28,6 +28,7 @@
 #include <gnuradio/digital/mpsk_receiver_cc.h>
 #include <gnuradio/blocks/complex_to_real.h>
 #include <fstream>
+#include <iomanip>
 #include <stdio.h>
 #include <stdarg.h>
 #include "dsp/rx_gendigital.h"
@@ -72,16 +73,25 @@ rx_gendigital::rx_gendigital(double sample_rate)
 // 	std::cout << "samplerate is " << (sample_rate) << "\n";
 // 	
 // 	std::cout << "scalefactor is " << ((float)sample_rate/(float)1200) << "\n";
+	locked = 0;
+	sync_word = 0x7cd215d8; //POCSAG
+	sync_word = 0xA6C6AAAA; //FLEX
+	sync_word_bit_length = 32;
+	baud_rate = 1600;
+	oversampling = 10;	
 	
-	sniffer_rr = make_resampler_ff(6000.0f / sample_rate);
+	
+	sniffer_rr = make_resampler_ff(float(baud_rate * oversampling) / sample_rate);
 	
 	sniffer = make_sniffer_f(SNIFFER_BUFSIZE);
 	sniffer->set_buffer_size(SNIFFER_BUFSIZE);
 	
-	wavfile = gr::blocks::wavfile_sink::make("test.wav", 1, 6000, 16);
+	wavfile = gr::blocks::wavfile_sink::make("test.wav", 1, (baud_rate * oversampling), 16);
 //    d_taps2 = gr::filter::firdes::low_pass(2500.0, d_sample_rate, 2400, 2000);
 	samplog = new std::ofstream("out.log");
 
+
+	
 	connect(self(), 0, lpf, 0);
 	connect(lpf, 0, quadrature_demod, 0);
 //	connect(lpf, 0, quadrature_demod, 0);
@@ -139,14 +149,11 @@ void rx_gendigital::process ()
 {
 	float buf[SNIFFER_BUFSIZE];
 	unsigned int num;
-	unsigned int locked = 0;
-	unsigned int current_bit = 0;
-	unsigned int output = 0;
-	int nudge = 0;
-	unsigned int static_bits = 0;
+
 	
 	sniffer->get_samples(&buf[0], num); //remember samples are inverted
 	
+	unsigned int middle_bit = oversampling/2;
 		
 	for(unsigned int i=0;i<num;i++) {
 		if(static_bits>30) locked = 0;
@@ -156,6 +163,8 @@ void rx_gendigital::process ()
 				locked = 1;
 				current_bit = 0;
 				static_bits = 0;
+				bit_sum = 0.0f;
+				nudge = 0;
 				*samplog << "\n\n";
 			} else {
 //				std::cout << locked << " " << static_bits << " " << i << " " << buf[i] << " " << buf[i] << "\n";
@@ -173,7 +182,8 @@ void rx_gendigital::process ()
 			*samplog << '0';
 		}
 		
-		if(current_bit==2) {
+		
+		if(current_bit==middle_bit) {
 			static_bits++;
 			if(buf[i]<0) {
 				std::cout << "1";
@@ -184,8 +194,14 @@ void rx_gendigital::process ()
 				if(output==1) static_bits = 0;
 				output = 0;
 			}
+			
+			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
+			
+			if(rolling_sync_word_buffer==sync_word) {
+				std::cout << "\nsync word found!\n";
+			}
 
-			if(i>1 && ((output==1 && buf[i-2]>0) || (output==0 && buf[i-2]<0)) ) {
+			if(i>=middle_bit && ((output==1 && buf[i-middle_bit]>0) || (output==0 && buf[i-middle_bit]<0)) ) {
 				// first edge came late!
 //				i += 1;
 				nudge += 1;
@@ -199,7 +215,7 @@ void rx_gendigital::process ()
 		}
 		
 
-		if(current_bit==4 && ((output==1 && buf[i]>0) || (output==0 && buf[i]<0)) ) {
+		if(current_bit==(oversampling-1) && ((output==1 && buf[i]>0) || (output==0 && buf[i]<0)) ) {
 			// next edge came early!
 //			i -= 1;
 			nudge -= 1;
@@ -211,7 +227,7 @@ void rx_gendigital::process ()
 		}
 		
 		current_bit++;		
-		if(current_bit>=5) current_bit = 0;
+		if(current_bit>=oversampling) current_bit = 0;
 	
 // 		if(buf[i]>0) std::cout << "1";
 // 		else std::cout << "0";

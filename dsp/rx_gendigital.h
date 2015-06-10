@@ -112,7 +112,18 @@ private:
     resampler_ff_sptr sniffer_rr; /*!< Sniffer resampler. */
     
     double d_sample_rate;
+	unsigned long long sync_word;
+	unsigned int sync_word_bit_length;
+	unsigned int baud_rate;
+	unsigned int oversampling;
 	
+	unsigned int locked;
+	unsigned int current_bit;
+	float bit_sum;
+	unsigned int output;
+	int nudge;
+	unsigned int static_bits;
+	unsigned long long rolling_sync_word_buffer;
 	
 };
 

@@ -1114,11 +1114,15 @@ void receiver::connect_all(rx_chain type)
         {
             tb->connect(iq_swap, 0, dc_corr, 0);
             tb->connect(dc_corr, 0, iq_fft, 0);
+			tb->connect(dc_corr, 0, mixer, 0);
         }
         else
         {
             tb->connect(iq_swap, 0, iq_fft, 0);
+			tb->connect(iq_swap, 0, mixer, 0);
         }
+        tb->connect(lo, 0, mixer, 1);
+		tb->connect(mixer, 0, gendigital, 0);
         break;
 
     case RX_CHAIN_NBRX:
