@@ -25,6 +25,7 @@
 
 #include <gnuradio/hier_block2.h>
 #include <gnuradio/analog/quadrature_demod_cf.h>
+#include <gnuradio/analog/simple_squelch_cc.h>
 #include <gnuradio/filter/fir_filter_ccc.h>
 #include <gnuradio/filter/fir_filter_ccf.h>
 #include <gnuradio/filter/fir_filter_fff.h>
@@ -82,6 +83,8 @@ public:
 	void process();
 
 private:
+	gr::analog::simple_squelch_cc::sptr sql;
+	
 	gr::filter::fir_filter_ccf::sptr lpf;
 	std::vector<float> d_taps;	
 	
@@ -110,6 +113,7 @@ private:
 //     gr::blocks::udp_sink::sptr udp_sink4;
 	sniffer_f_sptr    sniffer;    /*!< Sample sniffer for data decoders. */
     resampler_ff_sptr sniffer_rr; /*!< Sniffer resampler. */
+
     
     double d_sample_rate;
 	unsigned long long sync_word;
@@ -118,9 +122,12 @@ private:
 	unsigned int oversampling;
 	
 	unsigned int locked;
+	unsigned int synced;
 	unsigned int current_bit;
 	float bit_sum;
 	unsigned int output;
+	unsigned int output_word;
+	unsigned int output_word_position;
 	int nudge;
 	unsigned int static_bits;
 	unsigned long long rolling_sync_word_buffer;

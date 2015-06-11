@@ -68,18 +68,27 @@ rx_gendigital::rx_gendigital(double sample_rate)
                                  d_cutoff_freq, d_trans_width);
 	lpf = gr::filter::fir_filter_ccf::make(1, d_taps);	
 	
+	sql = gr::analog::simple_squelch_cc::make(-50.0, 0.001);
+	
 	quadrature_demod = gr::analog::quadrature_demod_cf::make(1);
 	
 // 	std::cout << "samplerate is " << (sample_rate) << "\n";
 // 	
 // 	std::cout << "scalefactor is " << ((float)sample_rate/(float)1200) << "\n";
 	locked = 0;
-	sync_word = 0x7cd215d8; //POCSAG
-	sync_word = 0xA6C6AAAA; //FLEX
+	synced = 0;
 	sync_word_bit_length = 32;
-	baud_rate = 1600;
 	oversampling = 10;	
 	
+	baud_rate = 1600;
+	sync_word = 0xA6C6AAAA; //FLEX
+
+	sync_word = 0x7cd215d8; //POCSAG
+	baud_rate = 1200;
+
+	
+	output_word = 0;
+	output_word_position = 0;
 	
 	sniffer_rr = make_resampler_ff(float(baud_rate * oversampling) / sample_rate);
 	
@@ -93,7 +102,8 @@ rx_gendigital::rx_gendigital(double sample_rate)
 
 	
 	connect(self(), 0, lpf, 0);
-	connect(lpf, 0, quadrature_demod, 0);
+	connect(lpf, 0, sql, 0);
+	connect(sql, 0, quadrature_demod, 0);
 //	connect(lpf, 0, quadrature_demod, 0);
 	connect(quadrature_demod, 0, sniffer_rr, 0);
 	connect(sniffer_rr, 0, sniffer, 0);
@@ -156,14 +166,16 @@ void rx_gendigital::process ()
 	unsigned int middle_bit = oversampling/2;
 		
 	for(unsigned int i=0;i<num;i++) {
-		if(static_bits>30) locked = 0;
+		if(static_bits>30) {
+			locked = 0;
+			synced = 0;
+		}
 		
 		if(locked==0) {
 			if(i>0 && buf[i]>=0 && buf[i-1]<0) { // 1->0 transition
 				locked = 1;
 				current_bit = 0;
 				static_bits = 0;
-				bit_sum = 0.0f;
 				nudge = 0;
 				*samplog << "\n\n";
 			} else {
@@ -183,14 +195,14 @@ void rx_gendigital::process ()
 		}
 		
 		
-		if(current_bit==middle_bit) {
+/*		if(current_bit==middle_bit) {
 			static_bits++;
 			if(buf[i]<0) {
-				std::cout << "1";
+//				std::cout << "1";
 				if(output==0) static_bits = 0;
 				output = 1;
 			} else {
-				std::cout << "0";
+//				std::cout << "0";
 				if(output==1) static_bits = 0;
 				output = 0;
 			}
@@ -212,6 +224,51 @@ void rx_gendigital::process ()
 				}
 			}
 			
+		}*/
+		
+		if(current_bit==0) {
+			bit_sum = 0.0f;
+		} else if(current_bit>0 && current_bit<(oversampling-1)) {
+			bit_sum -= float(buf[i]);
+		} else if(current_bit == (oversampling-1)) {
+			static_bits++;
+			if(bit_sum>0) {
+				if(output==0) static_bits = 0;
+				output = 1;
+//				std::cout << "1";
+			} else {
+				if(output==1) static_bits = 0;
+				output = 0;
+//				std::cout << "0";
+			}
+			
+			output_word |= ((output&1)<<(31-output_word_position));
+			output_word_position++;
+			
+			if(output_word_position==32 && synced==1) {
+				std::cout << std::hex << output_word << "\n";
+				output_word = 0;
+				output_word_position = 0;
+			}
+			
+			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
+			
+			if(rolling_sync_word_buffer==sync_word) {
+				std::cout << "\nsync word found!\n";
+				output_word = 0;
+				output_word_position = 0;
+				synced = 1;
+			}
+			
+			if(i>=middle_bit && ((output==1 && buf[i-middle_bit]>0) || (output==0 && buf[i-middle_bit]<0)) ) {
+				// first edge came late!
+				nudge += 1;
+				if(nudge>4) {
+					i += 1;
+//					std::cout << ">";
+					nudge = 0;
+				}
+			}
 		}
 		
 
