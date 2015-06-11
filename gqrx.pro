@@ -116,6 +116,7 @@ SOURCES += \
     qtgui/dockrxopt.cpp \
     qtgui/dockfft.cpp \
     qtgui/freqctrl.cpp \
+    qtgui/gendigitalwin.cpp \
     qtgui/ioconfig.cpp \
     qtgui/iq_tool.cpp \
     qtgui/meter.cpp \
@@ -171,6 +172,7 @@ HEADERS += \
     qtgui/dockrds.h \
     qtgui/dockrxopt.h \
     qtgui/freqctrl.h \
+    qtgui/gendigitalwin.h \
     qtgui/ioconfig.h \
     qtgui/iq_tool.h \
     qtgui/meter.h \
@@ -193,6 +195,7 @@ FORMS += \
     qtgui/dockfft.ui \
     qtgui/dockinputctl.ui \
     qtgui/dockrds.ui \
+    qtgui/gendigitalwin.ui \
     qtgui/iq_tool.ui \
     qtgui/dockrxopt.ui \
     qtgui/ioconfig.ui \

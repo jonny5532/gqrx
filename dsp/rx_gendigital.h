@@ -79,8 +79,13 @@ public:
     rx_gendigital(double sample_rate=96000.0);
     ~rx_gendigital();
 
-    void set_param(double low, double high, double trans_width);
+    //void set_param(double low, double high, double trans_width);
 	void process();
+
+	void set_sync_word(std::string &hex);
+	void set_baud_rate(unsigned int baud_rate);
+	void get_output(std::string &outbuff);
+	//void set_baud_rate(unsigned int baud_rate);
 
 private:
 	gr::analog::simple_squelch_cc::sptr sql;
@@ -92,6 +97,8 @@ private:
 	
 	gr::blocks::wavfile_sink::sptr wavfile;
 	std::ofstream *samplog;
+	
+	std::stringstream output_buffer;
 	
 //     std::vector<gr_complex> d_taps;
 //     std::vector<float> d_taps2;

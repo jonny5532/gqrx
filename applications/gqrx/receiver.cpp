@@ -1238,3 +1238,20 @@ void receiver::digital_decode()
 {
 	gendigital->process();
 }
+
+void receiver::set_gendigital_sync_word(std::string &word)
+{
+	gendigital->set_sync_word(word);
+}
+
+void receiver::set_gendigital_baud_rate(unsigned int baud_rate)
+{
+    stop();
+	gendigital->set_baud_rate(baud_rate);
+    start();
+}
+
+void receiver::get_gendigital_output(std::string &outbuff)
+{
+    gendigital->get_output(outbuff);
+}

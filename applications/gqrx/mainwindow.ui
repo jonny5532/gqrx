@@ -128,7 +128,7 @@
      <x>0</x>
      <y>0</y>
      <width>950</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -168,6 +168,7 @@
     <addaction name="actionIqTool"/>
     <addaction name="separator"/>
     <addaction name="actionAFSK1200"/>
+    <addaction name="actionGenDigital"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Tools"/>
@@ -421,6 +422,11 @@
    </property>
    <property name="toolTip">
     <string>Show news about this release</string>
+   </property>
+  </action>
+  <action name="actionGenDigital">
+   <property name="text">
+    <string>Generic Digital Decoder</string>
    </property>
   </action>
  </widget>

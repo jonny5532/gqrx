@@ -39,6 +39,7 @@
 #include "qtgui/dockbookmarks.h"
 #include "qtgui/dockrds.h"
 #include "qtgui/afsk1200win.h"
+#include "qtgui/gendigitalwin.h"
 #include "qtgui/iq_tool.h"
 
 #include "applications/gqrx/remote_control.h"
@@ -103,6 +104,7 @@ private:
     /* data decoders */
     Afsk1200Win    *dec_afsk1200;
     bool            dec_rds;
+    GenDigitalWin    *dec_gendigital;
 
     QTimer   *dec_timer;
     QTimer   *meter_timer;
@@ -182,6 +184,10 @@ private slots:
 
     /* RDS */
     void setRdsDecoder(bool checked);
+    
+    /* gendigital */
+	void on_gendigital_baudRateChanged(unsigned int baud_rate);
+	void on_gendigital_syncWordChanged(std::string sync_word);
 
     /* menu and toolbar actions */
     void on_actionDSP_triggered(bool checked);
@@ -193,6 +199,7 @@ private slots:
     void on_actionRemoteControl_triggered(bool checked);
     void on_actionRemoteConfig_triggered();
     void on_actionAFSK1200_triggered();
+	void on_actionGenDigital_triggered();
     void on_actionUserGroup_triggered();
     void on_actionNews_triggered();
     void on_actionAbout_triggered();

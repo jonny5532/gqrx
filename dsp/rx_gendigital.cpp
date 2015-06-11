@@ -147,6 +147,36 @@ rx_gendigital::~rx_gendigital ()
 
 }
 
+void rx_gendigital::set_sync_word(std::string &hex) 
+{
+	unsigned int word_length = 0;
+	unsigned long long word = 0;
+	
+	for(std::string::iterator it = hex.begin(); it != hex.end(); ++it) {
+		unsigned int c = 0;
+		if(*it >= '0' && *it <= '9') {
+			c = (*it)-'0';
+		} else if(*it >= 'A' && *it <= 'F') {
+			c = ((*it)-'A')+10;
+		} else if(*it >= 'a' && *it <= 'f') {
+			c = ((*it)-'a')+10;
+		} else {
+			return; //invalid!
+		}
+		word = (word << 4) | (c&0xf);
+		word_length += 4;
+	}
+	sync_word = word;
+	sync_word_bit_length = word_length;
+}
+
+void rx_gendigital::set_baud_rate(unsigned int br)
+{
+	baud_rate = br;
+	sniffer_rr->set_rate(float(baud_rate * oversampling) / d_sample_rate);
+	locked = 0;
+}
+
 /* so, interesting parameters
  * 
  * - baud rate
@@ -246,7 +276,9 @@ void rx_gendigital::process ()
 			output_word_position++;
 			
 			if(output_word_position==32 && synced==1) {
-				std::cout << std::hex << output_word << "\n";
+				char sbuf[32];
+				snprintf(sbuf, sizeof(sbuf), "%02x %02x %02x %02x ", (output_word>>24), (output_word>>16)&0xf, (output_word>>8)&0xff, output_word&0xff);
+				output_buffer << sbuf;
 				output_word = 0;
 				output_word_position = 0;
 			}
@@ -254,7 +286,8 @@ void rx_gendigital::process ()
 			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
 			
 			if(rolling_sync_word_buffer==sync_word) {
-				std::cout << "\nsync word found!\n";
+				output_buffer << "\n\n";
+				//std::cout << "\nsync word found!\n";
 				output_word = 0;
 				output_word_position = 0;
 				synced = 1;
@@ -289,6 +322,13 @@ void rx_gendigital::process ()
 // 		if(buf[i]>0) std::cout << "1";
 // 		else std::cout << "0";
 	}
+}
+
+void rx_gendigital::get_output(std::string &outbuff)
+{
+	outbuff = output_buffer.str();
+	output_buffer.clear();
+	output_buffer.str(std::string());
 }
 
 // rx_gendigital_store::rx_gendigital_store() : gr::block ("rx_gendigital_store",

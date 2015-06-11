@@ -62,7 +62,8 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     d_hw_freq(0),
     d_fftAvg(0.5),
     d_have_audio(true),
-    dec_afsk1200(0)
+    dec_afsk1200(0),
+    dec_gendigital(0)
 {
     ui->setupUi(this);
     Bookmarks::create();
@@ -1906,6 +1907,32 @@ void MainWindow::afsk1200win_closed()
 
 
 
+void MainWindow::on_actionGenDigital_triggered()
+{
+	
+	
+	if (dec_gendigital != 0) {
+        dec_gendigital->raise();
+    } else {
+		dec_gendigital = new GenDigitalWin(this);
+		connect(dec_gendigital, SIGNAL(baudRateChanged(unsigned int)), this, SLOT(on_gendigital_baudRateChanged(unsigned int)));
+		connect(dec_gendigital, SIGNAL(syncWordChanged(std::string)), this, SLOT(on_gendigital_syncWordChanged(std::string)));
+		dec_gendigital->show();
+	
+		dec_timer->start(100);
+	}
+}
+
+void MainWindow::on_gendigital_baudRateChanged(unsigned int baud_rate) 
+{
+	rx->set_gendigital_baud_rate(baud_rate);
+}
+
+void MainWindow::on_gendigital_syncWordChanged(std::string sync_word) 
+{
+	rx->set_gendigital_sync_word(sync_word);
+}
+
 /*! \brief Cyclic processing for acquiring samples from receiver and
  *         processing them with data decoders (see dec_* objects)
  */
@@ -1924,6 +1951,13 @@ void MainWindow::decoderTimeout()
     /* else stop timeout and sniffer? */
 	
 	rx->digital_decode();
+	
+	std::string buf;
+	rx->get_gendigital_output(buf);
+	if(buf.length()>0) {
+		//ui->textView->text(ui->textView()->text + buf);
+		dec_gendigital->received_message(buf);
+	}
 }
 
 void MainWindow::setRdsDecoder(bool checked)

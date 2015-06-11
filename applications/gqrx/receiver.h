@@ -213,8 +213,12 @@ public:
     bool is_rds_decoder_active();
     void reset_rds_parser();
 	
+	/* gendigital functions */
 	void digital_decode();
-
+	void set_gendigital_sync_word(std::string &word);
+	void set_gendigital_baud_rate(unsigned int baud_rate);
+	void get_gendigital_output(std::string &outbuff);
+	
 private:
     void connect_all(rx_chain type);
 
