@@ -217,6 +217,8 @@ public:
 	void digital_decode();
 	void set_gendigital_sync_word(std::string &word);
 	void set_gendigital_baud_rate(unsigned int baud_rate);
+	void set_gendigital_squelch(double v);
+	void set_gendigital_decode_format(std::string &format);
 	void get_gendigital_output(std::string &outbuff);
 	
 private:

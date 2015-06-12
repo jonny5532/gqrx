@@ -188,6 +188,8 @@ private slots:
     /* gendigital */
 	void on_gendigital_baudRateChanged(unsigned int baud_rate);
 	void on_gendigital_syncWordChanged(std::string sync_word);
+	void on_gendigital_squelchChanged(double v);
+	void on_gendigital_decodeFormatChanged(std::string format);
 
     /* menu and toolbar actions */
     void on_actionDSP_triggered(bool checked);

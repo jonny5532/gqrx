@@ -1917,6 +1917,8 @@ void MainWindow::on_actionGenDigital_triggered()
 		dec_gendigital = new GenDigitalWin(this);
 		connect(dec_gendigital, SIGNAL(baudRateChanged(unsigned int)), this, SLOT(on_gendigital_baudRateChanged(unsigned int)));
 		connect(dec_gendigital, SIGNAL(syncWordChanged(std::string)), this, SLOT(on_gendigital_syncWordChanged(std::string)));
+		connect(dec_gendigital, SIGNAL(squelchChanged(double)), this, SLOT(on_gendigital_squelchChanged(double)));
+		connect(dec_gendigital, SIGNAL(decodeFormatChanged(std::string)), this, SLOT(on_gendigital_decodeFormatChanged(std::string)));
 		dec_gendigital->show();
 	
 		dec_timer->start(100);
@@ -1931,6 +1933,16 @@ void MainWindow::on_gendigital_baudRateChanged(unsigned int baud_rate)
 void MainWindow::on_gendigital_syncWordChanged(std::string sync_word) 
 {
 	rx->set_gendigital_sync_word(sync_word);
+}
+
+void MainWindow::on_gendigital_squelchChanged(double v)
+{
+	rx->set_gendigital_squelch(v);
+}
+
+void MainWindow::on_gendigital_decodeFormatChanged(std::string format)
+{
+	rx->set_gendigital_decode_format(format);
 }
 
 /*! \brief Cyclic processing for acquiring samples from receiver and

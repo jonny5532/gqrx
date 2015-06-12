@@ -51,13 +51,17 @@ signals:
     void windowClosed();  /*! Signal we emit when window is closed. */
 	void baudRateChanged(unsigned int baud_rate);
 	void syncWordChanged(std::string sync_word);
+	void squelchChanged(double v);
+	void decodeFormatChanged(std::string format);
 
 private slots:
 //     void on_actionClear_triggered();
 //     void on_actionSave_triggered();
 //     void on_actionInfo_triggered();
-	void on_baudRate_changed();
-	void on_syncWord_changed();
+	void on_baudRate_currentIndexChanged();
+	void on_syncWord_textChanged();
+	void on_squelch_valueChanged(double v);
+	void on_decodeFormat_currentIndexChanged();
 	
 	
 private:

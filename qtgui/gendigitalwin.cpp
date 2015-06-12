@@ -49,8 +49,8 @@ GenDigitalWin::GenDigitalWin(QWidget *parent) :
     /* AFSK1200 decoder */
 //     decoder = new CAfsk12(this);
 //     connect(decoder, SIGNAL(newMessage(QString)), ui->textView, SLOT(appendPlainText(QString)));
-	connect(ui->baudRate, SIGNAL(currentIndexChanged(QString)), this, SLOT(on_baudRate_changed()));
-	connect(ui->syncWord, SIGNAL(textChanged(QString)), this, SLOT(on_syncWord_changed()));
+	//connect(ui->baudRate, SIGNAL(currentIndexChanged(QString)), this, SLOT(on_baudRate_changed()));
+	//connect(ui->syncWord, SIGNAL(textChanged(QString)), this, SLOT(on_syncWord_changed()));
 }
 
 GenDigitalWin::~GenDigitalWin()
@@ -80,18 +80,27 @@ void GenDigitalWin::closeEvent(QCloseEvent *ev)
     emit windowClosed();
 }
 
-void GenDigitalWin::on_baudRate_changed()
+void GenDigitalWin::on_baudRate_currentIndexChanged()
 {
 	emit baudRateChanged(ui->baudRate->currentText().toInt());
 	//std::cout << "changed! " << ui->baudRate->currentText().toInt() << "\n";
 }
 
-void GenDigitalWin::on_syncWord_changed()
+void GenDigitalWin::on_syncWord_textChanged()
 {
 	emit syncWordChanged(ui->syncWord->text().toStdString());
 	//std::cout << "changed! " << ui->syncWord->text() << "\n";
 }
 
+void GenDigitalWin::on_squelch_valueChanged(double v)
+{
+	emit squelchChanged(v);
+}
+
+void GenDigitalWin::on_decodeFormat_currentIndexChanged()
+{
+	emit decodeFormatChanged(ui->decodeFormat->currentText().toStdString());
+}
 
 
 /*

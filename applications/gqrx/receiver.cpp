@@ -1251,6 +1251,16 @@ void receiver::set_gendigital_baud_rate(unsigned int baud_rate)
     start();
 }
 
+void receiver::set_gendigital_squelch(double v)
+{
+	gendigital->set_squelch(v);
+}
+
+void receiver::set_gendigital_decode_format(std::string &format)
+{
+	gendigital->set_decode_format(format);
+}
+
 void receiver::get_gendigital_output(std::string &outbuff)
 {
     gendigital->get_output(outbuff);

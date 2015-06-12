@@ -83,18 +83,22 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	sync_word_bit_length = 32;
 	oversampling = 10;	
 	
+
+
 	baud_rate = 1600;
 	sync_word = 0xA6C6AAAA; //FLEX
 
 	sync_word = 0x7cd215d8; //POCSAG
 	baud_rate = 1200;
 
-	baud_rate = 10000;
-	sync_word = 0xaa;
-	sync_word_bit_length = 8;
+// 	baud_rate = 10000;
+// 	sync_word = 0xaa;
+// 	sync_word_bit_length = 8;
 	
 	output_word = 0;
 	output_word_position = 0;
+	
+	pocsag_buffer_length = 0;
 	
 	sniffer_rr = make_resampler_ff(float(baud_rate * oversampling) / sample_rate);
 	
@@ -181,6 +185,16 @@ void rx_gendigital::set_baud_rate(unsigned int br)
 	baud_rate = br;
 	sniffer_rr->set_rate(float(baud_rate * oversampling) / d_sample_rate);
 	locked = 0;
+}
+
+void rx_gendigital::set_squelch(double v)
+{
+	sql->set_threshold(v);
+}
+
+void rx_gendigital::set_decode_format(std::string &format)
+{
+	decode_format = format;
 }
 
 /* so, interesting parameters
@@ -283,30 +297,62 @@ void rx_gendigital::process ()
 			
 			
 			
-			if(output_word_position==32 && synced==1) {
-				char sbuf[32];
-				snprintf(sbuf, sizeof(sbuf), "%02x %02x %02x %02x ", (output_word>>24), (output_word>>16)&0xf, (output_word>>8)&0xff, output_word&0xff);
-				output_buffer << sbuf;
-				output_word = 0;
-				output_word_position = 0;
-			}
+
 			
 			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
 			
 			if(rolling_sync_word_buffer==sync_word) {
-				output_buffer << "\n\n";
+				if(decode_format=="POCSAG") {
+				} else {
+					output_buffer << "\n\n";
+				}
 				//std::cout << "\nsync word found!\n";
 				output_word = 0;
 				output_word_position = 0;
 				synced = 1;
 			}
 			
+			if(output_word_position==32 && synced==1) {
+				//output the data!
+				if(decode_format=="POCSAG") {
+					if(output_word & 0x80000000) { // is a message word
+						pocsag_in_message = 1;
+						pocsag_buffer = (pocsag_buffer<<20) | ((output_word>>11)&0xfffff);
+						pocsag_buffer_length += 20;
+						while(pocsag_buffer_length>=7) {
+							char inc = char((pocsag_buffer>>(pocsag_buffer_length-7))&0x7f);
+							char outc = 0;
+							for(int ci=0;ci<7;ci++) {
+								outc = (outc<<1) | ((inc>>ci)&1);
+							}
+							if(outc<' ' || outc>'z') outc = ' ';
+							output_buffer << outc;
+							pocsag_buffer_length -= 7;
+						}
+					} else {
+						pocsag_buffer_length = 0;
+						if(pocsag_in_message) {
+							output_buffer << "\n\n";
+						}
+						pocsag_in_message = 0;
+					}
+				} else {
+					char sbuf[32];
+					snprintf(sbuf, sizeof(sbuf), "%02x %02x %02x %02x ", (output_word>>24), (output_word>>16)&0xff, (output_word>>8)&0xff, output_word&0xff);
+					output_buffer << sbuf;
+				}
+				output_word = 0;
+				output_word_position = 0;
+			}
+			
+			
 			if(i>=middle_bit && ((output==1 && buf[i-middle_bit]>0) || (output==0 && buf[i-middle_bit]<0)) ) {
 				// first edge came late!
 				nudge += 1;
 				if(nudge>4) {
 					i += 1;
-//					std::cout << ">";
+					std::cout << ">";
+					*samplog << ">";
 					nudge = 0;
 				}
 			}
@@ -319,7 +365,8 @@ void rx_gendigital::process ()
 			nudge -= 1;
 			if(nudge<-4) {
 				i -= 1;
-//				std::cout << "<";
+				std::cout << "<";
+				*samplog << "<";
 				nudge = 0;
 			}
 		}

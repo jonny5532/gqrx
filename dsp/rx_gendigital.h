@@ -84,7 +84,9 @@ public:
 
 	void set_sync_word(std::string &hex);
 	void set_baud_rate(unsigned int baud_rate);
+	void set_squelch(double v);
 	void get_output(std::string &outbuff);
+	void set_decode_format(std::string &format);
 	//void set_baud_rate(unsigned int baud_rate);
 
 private:
@@ -121,6 +123,7 @@ private:
 	sniffer_f_sptr    sniffer;    /*!< Sample sniffer for data decoders. */
     resampler_ff_sptr sniffer_rr; /*!< Sniffer resampler. */
 
+    std::string decode_format;
     
     double d_sample_rate;
 	unsigned long long sync_word;
@@ -139,6 +142,9 @@ private:
 	unsigned int static_bits;
 	unsigned long long rolling_sync_word_buffer;
 	
+	unsigned int pocsag_buffer;
+	unsigned int pocsag_buffer_length;
+	unsigned int pocsag_in_message;
 };
 
 
