@@ -64,11 +64,14 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	float d_cutoff_freq = 15000;
 	float d_trans_width = 4000;
 	
+ 	d_cutoff_freq = 30000;
+ 	d_trans_width = 5000;
+	
 	d_taps = gr::filter::firdes::low_pass(d_gain, sample_rate,
                                  d_cutoff_freq, d_trans_width);
 	lpf = gr::filter::fir_filter_ccf::make(1, d_taps);	
 	
-	sql = gr::analog::simple_squelch_cc::make(-50.0, 0.001);
+	sql = gr::analog::simple_squelch_cc::make(-100.0, 0.001);
 	
 	quadrature_demod = gr::analog::quadrature_demod_cf::make(1);
 	
@@ -86,6 +89,9 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	sync_word = 0x7cd215d8; //POCSAG
 	baud_rate = 1200;
 
+	baud_rate = 10000;
+	sync_word = 0xaa;
+	sync_word_bit_length = 8;
 	
 	output_word = 0;
 	output_word_position = 0;
@@ -265,15 +271,17 @@ void rx_gendigital::process ()
 			if(bit_sum>0) {
 				if(output==0) static_bits = 0;
 				output = 1;
-//				std::cout << "1";
+				std::cout << "1";
 			} else {
 				if(output==1) static_bits = 0;
 				output = 0;
-//				std::cout << "0";
+				std::cout << "0";
 			}
 			
 			output_word |= ((output&1)<<(31-output_word_position));
 			output_word_position++;
+			
+			
 			
 			if(output_word_position==32 && synced==1) {
 				char sbuf[32];
