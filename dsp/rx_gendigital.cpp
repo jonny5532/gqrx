@@ -74,14 +74,11 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	sql = gr::analog::simple_squelch_cc::make(-100.0, 0.001);
 	
 	quadrature_demod = gr::analog::quadrature_demod_cf::make(1);
-	
-// 	std::cout << "samplerate is " << (sample_rate) << "\n";
-// 	
-// 	std::cout << "scalefactor is " << ((float)sample_rate/(float)1200) << "\n";
+
 	locked = 0;
 	synced = 0;
 	sync_word_bit_length = 32;
-	oversampling = 10;	
+	oversampling = 10;
 	
 
 
@@ -91,9 +88,9 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	sync_word = 0x7cd215d8; //POCSAG
 	baud_rate = 1200;
 
-// 	baud_rate = 10000;
-// 	sync_word = 0xaa;
-// 	sync_word_bit_length = 8;
+ 	baud_rate = 10000;
+ 	sync_word = 0xaa;
+ 	sync_word_bit_length = 8;
 	
 	output_word = 0;
 	output_word_position = 0;
@@ -106,50 +103,15 @@ rx_gendigital::rx_gendigital(double sample_rate)
 	sniffer->set_buffer_size(SNIFFER_BUFSIZE);
 	
 	wavfile = gr::blocks::wavfile_sink::make("test.wav", 1, (baud_rate * oversampling), 16);
-//    d_taps2 = gr::filter::firdes::low_pass(2500.0, d_sample_rate, 2400, 2000);
+
 	samplog = new std::ofstream("out.log");
-
-
 	
 	connect(self(), 0, lpf, 0);
 	connect(lpf, 0, sql, 0);
 	connect(sql, 0, quadrature_demod, 0);
-//	connect(lpf, 0, quadrature_demod, 0);
 	connect(quadrature_demod, 0, sniffer_rr, 0);
 	connect(sniffer_rr, 0, sniffer, 0);
 	connect(sniffer_rr, 0, wavfile, 0);
-// 	connect(quadrature_demod, 0, sniffer, 0);
-// 	connect(self(), 0, lpf, 0);
-	
-//     f_fxff = gr::filter::freq_xlating_fir_filter_fcf::make(5.0, d_taps2, 57000, d_sample_rate);
-// 
-//     f_rrcf = gr::filter::firdes::root_raised_cosine(1, sample_rate/5, 2375, 1, 100);
-//     d_bpf2 = gr::filter::fir_filter_ccf::make(1, f_rrcf);
-// 
-//     d_mpsk = gr::digital::mpsk_receiver_cc::make(2, 0, 1*M_PI/100.0, -0.06, 0.06, 0.5, 0.05, sample_rate/5/2375.0, 0.001, 0.005);
-// 
-// 
-//     b_ctr = gr::blocks::complex_to_real::make(1);
-// 
-//     d_bs = gr::digital::binary_slicer_fb::make();
-// 
-//     b_koin = gr::blocks::keep_one_in_n::make(sizeof(unsigned char), 2);
-// 
-//     d_ddbb = gr::digital::diff_decoder_bb::make(2);
-
-//     rds_decoder = gr::rds::decoder::make(0, 0);
-//     rds_parser = gr::rds::parser::make(1, 0);
-
-    /* connect filter */
-//     connect(self(), 0, f_fxff, 0);
-//     connect(f_fxff, 0, d_bpf2, 0);
-//     connect(d_bpf2, 0, d_mpsk, 0);
-//     connect(d_mpsk, 0, b_ctr, 0);
-//     connect(b_ctr, 0, d_bs, 0);
-//     connect(d_bs, 0, b_koin, 0);
-//     connect(b_koin, 0, d_ddbb, 0);
-//     connect(d_ddbb, 0, self(), 0);
-	//connect(self(), 0, self(), 0);
 }
 
 rx_gendigital::~rx_gendigital ()
@@ -210,13 +172,12 @@ void rx_gendigital::process ()
 	float buf[SNIFFER_BUFSIZE];
 	unsigned int num;
 
-	
 	sniffer->get_samples(&buf[0], num); //remember samples are inverted
 	
 	unsigned int middle_bit = oversampling/2;
 		
 	for(unsigned int i=0;i<num;i++) {
-		if(static_bits>30) {
+		if(static_bits>30) { //if we haven't had a transition in 30 bits, assume we're out of sync
 			locked = 0;
 			synced = 0;
 		}
@@ -229,7 +190,6 @@ void rx_gendigital::process ()
 				nudge = 0;
 				*samplog << "\n\n";
 			} else {
-//				std::cout << locked << " " << static_bits << " " << i << " " << buf[i] << " " << buf[i] << "\n";
 				continue;
 			}
 		}
@@ -243,38 +203,6 @@ void rx_gendigital::process ()
 		} else {
 			*samplog << '0';
 		}
-		
-		
-/*		if(current_bit==middle_bit) {
-			static_bits++;
-			if(buf[i]<0) {
-//				std::cout << "1";
-				if(output==0) static_bits = 0;
-				output = 1;
-			} else {
-//				std::cout << "0";
-				if(output==1) static_bits = 0;
-				output = 0;
-			}
-			
-			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
-			
-			if(rolling_sync_word_buffer==sync_word) {
-				std::cout << "\nsync word found!\n";
-			}
-
-			if(i>=middle_bit && ((output==1 && buf[i-middle_bit]>0) || (output==0 && buf[i-middle_bit]<0)) ) {
-				// first edge came late!
-//				i += 1;
-				nudge += 1;
-				if(nudge>4) {
-					i += 1;
-//					std::cout << ">";
-					nudge = 0;
-				}
-			}
-			
-		}*/
 		
 		if(current_bit==0) {
 			bit_sum = 0.0f;
@@ -292,13 +220,11 @@ void rx_gendigital::process ()
 				std::cout << "0";
 			}
 			
+			//shift latest bit onto start of output_word
 			output_word |= ((output&1)<<(31-output_word_position));
 			output_word_position++;
 			
-			
-			
-
-			
+			//shift latest bit onto start of rolling sync word buffer
 			rolling_sync_word_buffer = ( (rolling_sync_word_buffer << 1) & ( (((unsigned long long)1)<<sync_word_bit_length)-1 ) ) | output;
 			
 			if(rolling_sync_word_buffer==sync_word) {
